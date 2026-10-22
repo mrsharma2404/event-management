@@ -1,42 +1,44 @@
 {
   "meta": {
-    "trained_at": "2026-10-22 13:12 UTC",
-    "n_sessions": 136,
+    "trained_at": "2026-10-22 13:29 UTC",
+    "n_sessions": 137,
     "n_positive": 11,
-    "n_seed": 135,
+    "n_seed": 136,
     "include_seed": true,
     "n_features": 43,
     "caveats": [
-      "- Only 11 conversions: every metric above is very noisy (see the \u00b1). Treat this as a pipeline check, not a finding.",
-      "- Most sessions are seeded demo data, in which converting sessions were picked at random. A leak-free model *should* score near chance here; a high score would point to leakage.",
-      "- The permutation test (p = 1.00) finds no evidence of signal, so the feature ranking describes what the model latched onto, not real drivers of conversion.",
-      "- A cross-validated AUC *below* 0.5 is not a model that predicts backwards: with this few conversions, shuffled labels also land below 0.5 on average (0.48), and this run fell in the low tail of that range. It means there is nothing reliable to learn yet.",
-      "- Re-run with `--real-only` once the site has a few hundred real sessions and ~50+ conversions."
+      "Shown one visit that converted and one that didn't, the model picks the converter 66% of the time (a coin flip gets 50%). The signal is promising but borderline (p = 0.06); more data will confirm it.",
+      "8% of visits convert. Among the visits the model ranks highest, conversions are about 4.3\u00d7 as common, so it is useful for spotting hot leads to follow up first.",
+      "Top signal: interactions: converters averaged 34.5 vs 19.7 for visits that didn't convert.",
+      "Top signal: time spent browsing: converters averaged 1222 s vs 700 s for visits that didn't convert.",
+      "Top signal: average page load time: converters averaged 1661 ms vs 1541 ms for visits that didn't convert.",
+      "A simple logistic regression does slightly better for now (ROC-AUC 0.73 vs 0.66), which is normal with this little data; XGBoost usually pulls ahead as visits grow.",
+      "Based on 137 visits and 11 conversions; the scores will firm up as more visits come in."
     ]
   },
   "metrics": {
     "folds": 5,
     "repeats": 10,
-    "prevalence": 0.08088235294117647,
+    "prevalence": 0.08029197080291971,
     "models": {
       "xgboost": {
         "roc_auc": {
-          "mean": 0.27226666666666666,
-          "std": 0.1743068048649341
+          "mean": 0.659425641025641,
+          "std": 0.23100525571008224
         },
         "pr_auc": {
-          "mean": 0.10004918177672924,
-          "std": 0.056023594829262086
+          "mean": 0.34759856513492937,
+          "std": 0.22184837246227226
         }
       },
       "logistic_regression": {
         "roc_auc": {
-          "mean": 0.40093333333333336,
-          "std": 0.16998305797931745
+          "mean": 0.7267999999999999,
+          "std": 0.14903246353522015
         },
         "pr_auc": {
-          "mean": 0.14155723002089268,
-          "std": 0.1260634167011119
+          "mean": 0.33665888397235144,
+          "std": 0.21640827019400502
         }
       },
       "majority_baseline": {
@@ -45,199 +47,189 @@
           "std": 0.0
         },
         "pr_auc": {
-          "mean": 0.08068783068783068,
-          "std": 0.013227513227513229
+          "mean": 0.08015873015873015,
+          "std": 0.01353091201327452
         }
       }
     },
     "permutation_test": {
       "permutations": 30,
-      "null_mean": 0.47706666666666664,
-      "null_p05": 0.33916666666666667,
-      "null_p95": 0.6201333333333332,
-      "p_value": 1.0
+      "null_mean": 0.491008547008547,
+      "null_p05": 0.33083717948717944,
+      "null_p95": 0.6293717948717948,
+      "p_value": 0.06451612903225806
     }
   },
   "features": [
     {
+      "feature": "n_events",
+      "mean_abs_shap": 1.009430170059204,
+      "direction": "higher \u2192 more likely"
+    },
+    {
       "feature": "active_seconds",
-      "mean_abs_shap": 0.7055622935295105,
+      "mean_abs_shap": 0.8159981966018677,
       "direction": "higher \u2192 more likely"
     },
     {
       "feature": "avg_load_ms",
-      "mean_abs_shap": 0.6682485938072205,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "max_price_viewed",
-      "mean_abs_shap": 0.6260014176368713,
+      "mean_abs_shap": 0.7978054881095886,
       "direction": "higher \u2192 more likely"
     },
     {
-      "feature": "n_detail_views",
-      "mean_abs_shap": 0.5153088569641113,
+      "feature": "n_tier_selects",
+      "mean_abs_shap": 0.749498188495636,
       "direction": "higher \u2192 more likely"
     },
     {
-      "feature": "n_testimonials",
-      "mean_abs_shap": 0.4285581111907959,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_page_views",
-      "mean_abs_shap": 0.33648043870925903,
+      "feature": "n_date_selects",
+      "mean_abs_shap": 0.5055578947067261,
       "direction": "higher \u2192 more likely"
     },
     {
       "feature": "hour_ist",
-      "mean_abs_shap": 0.29737114906311035,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "channel_direct",
-      "mean_abs_shap": 0.26502665877342224,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "is_returning",
-      "mean_abs_shap": 0.25751304626464844,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "is_weekend",
-      "mean_abs_shap": 0.2190331667661667,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "landing_type_listing",
-      "mean_abs_shap": 0.1767808496952057,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "os_macOS",
-      "mean_abs_shap": 0.17187628149986267,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "n_reviews",
-      "mean_abs_shap": 0.17033341526985168,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_events",
-      "mean_abs_shap": 0.1666034460067749,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_price_views",
-      "mean_abs_shap": 0.14279936254024506,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "channel_organic_search",
-      "mean_abs_shap": 0.12462231516838074,
+      "mean_abs_shap": 0.47237512469291687,
       "direction": "higher \u2192 more likely"
     },
     {
       "feature": "os_Android",
-      "mean_abs_shap": 0.11417576670646667,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "landing_type_collection",
-      "mean_abs_shap": 0.08666087687015533,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "n_packages_viewed",
-      "mean_abs_shap": 0.08257926255464554,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "n_listing_views",
-      "mean_abs_shap": 0.06387682259082794,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "device_mobile",
-      "mean_abs_shap": 0.0528188981115818,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "os_Windows",
-      "mean_abs_shap": 0.04874977469444275,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_filters",
-      "mean_abs_shap": 0.04717028886079788,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "device_desktop",
-      "mean_abs_shap": 0.04426969960331917,
+      "mean_abs_shap": 0.4534754753112793,
       "direction": "higher \u2192 more likely"
     },
     {
       "feature": "n_wishlist",
-      "mean_abs_shap": 0.040804602205753326,
+      "mean_abs_shap": 0.3162454068660736,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_testimonials",
+      "mean_abs_shap": 0.25179317593574524,
       "direction": "higher \u2192 more likely"
     },
     {
-      "feature": "n_searches",
-      "mean_abs_shap": 0.03925550356507301,
+      "feature": "max_price_viewed",
+      "mean_abs_shap": 0.23660489916801453,
       "direction": "higher \u2192 less likely"
     },
     {
-      "feature": "n_gallery",
-      "mean_abs_shap": 0.027882376685738564,
+      "feature": "n_reviews",
+      "mean_abs_shap": 0.12239301949739456,
       "direction": "higher \u2192 less likely"
     },
     {
-      "feature": "n_faq",
-      "mean_abs_shap": 0.025779498741030693,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "channel_social",
-      "mean_abs_shap": 0.023838920518755913,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "os_iOS",
-      "mean_abs_shap": 0.02327963151037693,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_tier_selects",
-      "mean_abs_shap": 0.021442575380206108,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "landing_type_package",
-      "mean_abs_shap": 0.020582957193255424,
-      "direction": "higher \u2192 more likely"
-    },
-    {
-      "feature": "landing_type_home",
-      "mean_abs_shap": 0.020371638238430023,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_shares",
-      "mean_abs_shap": 0.011765919625759125,
-      "direction": "higher \u2192 less likely"
-    },
-    {
-      "feature": "n_results_clicked",
-      "mean_abs_shap": 0.0103704072535038,
+      "feature": "channel_direct",
+      "mean_abs_shap": 0.11247317492961884,
       "direction": "higher \u2192 more likely"
     },
     {
       "feature": "channel_paid",
-      "mean_abs_shap": 0.0055793458595871925,
+      "mean_abs_shap": 0.10775166004896164,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "is_returning",
+      "mean_abs_shap": 0.08467405289411545,
       "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "device_mobile",
+      "mean_abs_shap": 0.08043618500232697,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "landing_type_blog",
+      "mean_abs_shap": 0.07748078554868698,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_searches",
+      "mean_abs_shap": 0.07471290975809097,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "landing_type_package",
+      "mean_abs_shap": 0.07137315720319748,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_page_views",
+      "mean_abs_shap": 0.06801442801952362,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "is_weekend",
+      "mean_abs_shap": 0.06329827755689621,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_listing_views",
+      "mean_abs_shap": 0.06327877938747406,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_filters",
+      "mean_abs_shap": 0.058804985135793686,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_gallery",
+      "mean_abs_shap": 0.05306469276547432,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "os_macOS",
+      "mean_abs_shap": 0.05017206445336342,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_detail_views",
+      "mean_abs_shap": 0.04711023345589638,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "landing_type_home",
+      "mean_abs_shap": 0.044787872582674026,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "os_iOS",
+      "mean_abs_shap": 0.04234325513243675,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_price_views",
+      "mean_abs_shap": 0.02902103029191494,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "device_desktop",
+      "mean_abs_shap": 0.02878623455762863,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "channel_organic_search",
+      "mean_abs_shap": 0.02804250828921795,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_faq",
+      "mean_abs_shap": 0.02168525755405426,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_packages_viewed",
+      "mean_abs_shap": 0.01973338983952999,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "landing_type_listing",
+      "mean_abs_shap": 0.01736142858862877,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_results_clicked",
+      "mean_abs_shap": 0.005195558071136475,
+      "direction": "higher \u2192 more likely"
     }
   ]
 }

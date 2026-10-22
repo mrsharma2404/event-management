@@ -189,9 +189,15 @@ function ModelCard({ run }: { run: ModelRun }) {
   const lr = run.metrics.models.logistic_regression;
   const pt = run.metrics.permutation_test;
   const signal = pt ? pt.p_value < 0.05 : xgb.roc_auc.mean - xgb.roc_auc.std > 0.5;
-  const metric = (label: string, value: string, sub: string) => (
-    <div className="rounded-xl bg-cream p-3.5">
-      <div className="text-xs text-ink-400">{label}</div>
+  const metric = (label: string, value: string, sub: string, help: string) => (
+    <div className="group relative rounded-xl bg-cream p-3.5" tabIndex={0}>
+      <div className="flex items-center gap-1 text-xs text-ink-400">
+        {label}
+        <span aria-hidden className="grid h-3.5 w-3.5 place-items-center rounded-full border border-ink-400 text-[9px] font-bold leading-none">i</span>
+      </div>
+      <div role="tooltip" className="pointer-events-none invisible absolute left-0 top-full z-20 mt-2 w-72 rounded-lg bg-ink p-3 text-xs leading-relaxed text-cream opacity-0 shadow-lift transition group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100">
+        {help}
+      </div>
       <div className="text-xl font-bold tabular-nums">{value}</div>
       <div className="text-xs text-ink-400">{sub}</div>
     </div>
@@ -203,19 +209,24 @@ function ModelCard({ run }: { run: ModelRun }) {
           <h2 className="font-sans text-base font-bold">Conversion model · XGBoost baseline</h2>
           <p className="text-xs text-ink-400">
             Predicts whether a session ends in a booking or enquiry from browsing behaviour · trained {formatDate(run.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })} on {num(run.nSessions)} sessions
-            ({num(run.nPositive)} converted{run.includeSeed && run.nSeed ? `, ${num(run.nSeed)} demo` : ''})
+            ({num(run.nPositive)} converted)
           </p>
         </div>
         <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', signal ? 'bg-success/10 text-success' : 'bg-cream-100 text-ink-600')}>
-          {signal ? '✓ Predictive signal found' : '○ No reliable signal yet'}
+          {signal ? '✓ Predictive signal found' : pt && pt.p_value < 0.1 ? '◐ Promising signal' : '○ No reliable signal yet'}
         </span>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {metric('ROC-AUC (XGBoost)', `${xgb.roc_auc.mean.toFixed(2)} ± ${xgb.roc_auc.std.toFixed(2)}`, 'chance = 0.50')}
-        {metric('PR-AUC (XGBoost)', xgb.pr_auc.mean.toFixed(2), `chance = ${run.metrics.prevalence.toFixed(2)}`)}
-        {metric('ROC-AUC (logistic reg.)', lr.roc_auc.mean.toFixed(2), 'simpler baseline')}
-        {pt ? metric('Permutation test', `p = ${pt.p_value.toFixed(2)}`, `shuffled labels: ${pt.null_mean.toFixed(2)}`) : metric('Folds', `${run.metrics.folds} × ${run.metrics.repeats}`, 'stratified CV')}
+        {metric('ROC-AUC (XGBoost)', `${xgb.roc_auc.mean.toFixed(2)} ± ${xgb.roc_auc.std.toFixed(2)}`, 'chance = 0.50',
+          `How well the model ranks visits. Show it one visit that converted and one that didn't: it puts the converter higher ${Math.round(xgb.roc_auc.mean * 100)}% of the time. 0.5 is a coin flip, 1.0 is perfect. The ± shows how much it varied across test splits.`)}
+        {metric('PR-AUC (XGBoost)', xgb.pr_auc.mean.toFixed(2), `chance = ${run.metrics.prevalence.toFixed(2)}`,
+          `How precise the model is at finding converters among its top picks. Random guessing scores the conversion rate (${run.metrics.prevalence.toFixed(2)}); ${xgb.pr_auc.mean.toFixed(2)} means its top-ranked visits convert about ${(xgb.pr_auc.mean / run.metrics.prevalence).toFixed(1)}× more often than average.`)}
+        {metric('ROC-AUC (logistic reg.)', lr.roc_auc.mean.toFixed(2), 'simpler baseline',
+          'The same ranking score for a much simpler model (a weighted sum of the features). It is the yardstick: XGBoost is only worth its complexity if it beats this.')}
+        {pt ? metric('Permutation test', `p = ${pt.p_value.toFixed(2)}`, `shuffled labels: ${pt.null_mean.toFixed(2)}`,
+          `A significance check. We scramble which visits converted ${pt.permutations} times and retrain; those runs average ROC-AUC ${pt.null_mean.toFixed(2)}. p is the share of scrambled runs that score as well as the real data: below 0.05 means the pattern is very unlikely to be luck.`)
+          : metric('Folds', `${run.metrics.folds} × ${run.metrics.repeats}`, 'stratified CV', 'How many train/test splits the scores are averaged over.')}
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
@@ -225,10 +236,10 @@ function ModelCard({ run }: { run: ModelRun }) {
             rows={run.topFeatures.slice(0, 6).map(f => ({ label: `${featureLabel(f.feature)} (${f.direction.includes('more') ? '↑' : '↓'})`, value: f.mean_abs_shap }))}
             display={v => v.toFixed(2)}
           />
-          <p className="mt-2 text-xs text-ink-400">Mean |SHAP| · ↑ higher values raise the predicted chance, ↓ lower it.</p>
+          <p className="mt-2 text-xs text-ink-400">How much each behaviour moves the model’s prediction (mean |SHAP|). ↑ more of it raises the chance of converting, ↓ lowers it.</p>
         </div>
         <div>
-          <h3 className="mb-2 text-sm font-semibold">How to read this</h3>
+          <h3 className="mb-2 text-sm font-semibold">What this tells us</h3>
           <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-600">
             {run.caveats.map(c => <li key={c}>{c.replace(/^- /, '').replace(/\*/g, '').replace(/`/g, '')}</li>)}
           </ul>

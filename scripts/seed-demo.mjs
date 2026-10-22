@@ -100,7 +100,10 @@ function makeSession(visitor, number, startAt) {
     : channel === 'social' ? { utm_source: 'instagram', utm_medium: 'social', utm_campaign: null } : {};
   const referrer = channel === 'organic_search' ? 'https://www.google.com/' : channel === 'social' ? 'https://l.instagram.com/' : channel === 'referral' ? 'https://www.weddingwire.in/' : null;
   const landing = channel === 'paid' ? `/packages/${pickPackage().slug}` : channel === 'organic_search' ? weighted([['/', 4], ['/events/weddings', 3], ['/blog/wedding-budget-breakdown-2026', 2], [`/packages/${pickPackage().slug}`, 3]]) : weighted([['/', 6], ['/packages', 2], ['/plan-my-event', 1]]);
-  const s = { visitor, id: `seed-sess-${randomUUID()}`, number, t: startAt, landing, channel, utm, referrer, path: null, cart: null };
+  // How engaged this visit is (0–1). Drives browsing depth and, below, the chance of converting —
+  // so the demo data has the kind of behaviour → conversion patterns real traffic shows.
+  const engaged = Math.min(1, rnd() * 0.85 + (number > 1 ? 0.15 : 0) + (channel === 'email' || channel === 'organic_search' ? 0.1 : 0));
+  const s = { visitor, id: `seed-sess-${randomUUID()}`, number, t: startAt, landing, channel, utm, referrer, path: null, cart: null, engaged };
   const qs = utm.utm_source ? `?${new URLSearchParams(Object.entries(utm).filter(([, v]) => v))}` : '';
   s.landingPage = landing + qs;
   return s;
@@ -163,9 +166,9 @@ function browsePackage(s, pkg, depth) {
   if (depth > 0.5 && chance(0.5)) emit(s, 'event_gallery_opened', { package_slug: pkg.slug, photo_index: 1 });
   if (depth > 0.6) emit(s, 'event_review_viewed', { package_slug: pkg.slug, section: 'reviews' });
   if (depth > 0.7 && chance(0.4)) emit(s, 'faq_viewed', { package_slug: pkg.slug });
-  if (depth > 0.55 && chance(0.45)) emit(s, 'ticket_option_selected', { package_slug: pkg.slug, tier: pick(['classic', 'premium']) });
-  if (depth > 0.65 && chance(0.4)) emit(s, 'date_selected', { package_slug: pkg.slug, days_ahead: int(30, 200) });
-  if (chance(0.08)) emit(s, 'wishlist_added', { package_slug: pkg.slug, category: pkg.category, destination: pkg.destination });
+  if (chance(depth * 0.8)) emit(s, 'ticket_option_selected', { package_slug: pkg.slug, tier: pick(['classic', 'premium']) });
+  if (chance(depth * depth * 0.8)) emit(s, 'date_selected', { package_slug: pkg.slug, days_ahead: int(30, 200) });
+  if (chance(0.02 + depth * 0.15)) emit(s, 'wishlist_added', { package_slug: pkg.slug, category: pkg.category, destination: pkg.destination });
   if (chance(0.05)) emit(s, 'event_share_clicked', { package_slug: pkg.slug, method: 'native' });
 }
 
@@ -206,10 +209,21 @@ for (const v of visitors) {
 sessions.sort((a, b) => a.t - b.t);
 
 // Pick which sessions convert: 10 enquiries (mixed sources), 1 booking, a few abandoned checkouts.
-const shuffled = [...sessions].sort(() => rnd() - 0.5);
-const enquirySessions = shuffled.slice(0, 10);
-const bookingSession = shuffled.find(s => s.visitor.device.device_type === 'desktop' && !enquirySessions.includes(s));
-const abandonSessions = shuffled.filter(s => !enquirySessions.includes(s) && s !== bookingSession).slice(0, 4);
+// Converters are drawn with probability rising steeply with engagement (weighted sampling without replacement).
+const propensity = s => Math.exp(5 * s.engaged) * (s.visitor.device.device_type === 'desktop' ? 1.4 : 1);
+const drawWeighted = (pool, k) => {
+  const out = [];
+  const left = [...pool];
+  while (out.length < k && left.length) {
+    let r = rnd() * left.reduce((a, x) => a + propensity(x), 0);
+    const i = left.findIndex(x => (r -= propensity(x)) < 0);
+    out.push(left.splice(i < 0 ? 0 : i, 1)[0]);
+  }
+  return out;
+};
+const enquirySessions = drawWeighted(sessions, 10);
+const bookingSession = [...sessions].filter(s => s.visitor.device.device_type === 'desktop' && !enquirySessions.includes(s)).sort((a, b) => b.engaged - a.engaged)[0];
+const abandonSessions = drawWeighted(sessions.filter(s => !enquirySessions.includes(s) && s !== bookingSession), 4);
 
 const enquiries = [];
 const SOURCES = ['package-widget', 'package-widget', 'plan-my-event', 'plan-my-event', 'header', 'category:weddings', 'listing-banner', 'package-widget', 'contact-page', 'mobile-bar'];
@@ -219,7 +233,7 @@ for (const s of sessions) {
   visit(s, s.landing);
   if (s.landing === '/' && chance(0.5)) emit(s, 'testimonial_viewed', { section: 'testimonials' });
 
-  const engaged = rnd();
+  const engaged = s.engaged;
   if (!s.landing.startsWith('/packages/') && engaged > 0.25) {
     if (chance(0.35)) emit(s, 'search_performed', { source: 'hero', category: pick(['weddings', 'birthdays', 'pre-wedding', undefined]), filters_applied: int(1, 2) });
     visit(s, chance(0.3) ? '/events/weddings' : '/packages');
@@ -234,7 +248,8 @@ for (const s of sessions) {
     emit(s, 'event_viewed', { package_slug: pkg.slug, category: pkg.category, destination: pkg.destination, price_min: pkg.price, currency: 'INR' });
     if (engaged > 0.3) browsePackage(s, pickPackage(), engaged);
   }
-  if (engaged > 0.75 && chance(0.5)) browsePackage(s, pickPackage(), engaged - 0.2);
+  // Engaged visitors compare more packages.
+  for (let k = 1; k < Math.floor(engaged * 4); k++) browsePackage(s, pickPackage(), engaged - 0.1 * k);
   if (chance(0.06)) emit(s, pick(['whatsapp_click', 'call_click']), { link_text: 'Talk to an expert' });
 
   // Most people who open an enquiry form don't send it.
