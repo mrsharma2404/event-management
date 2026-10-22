@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-cream font-sans text-[15px] leading-relaxed text-ink antialiased; }
+  h1, h2, h3, h4 { @apply font-serif; }
+}
+
+@layer utilities {
+  .scrollbar-thin { scrollbar-width: thin; }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
+
+/* Lift the WhatsApp button above sticky mobile booking bars. */
+@media (max-width: 1023px) {
+  body:has([data-mobile-bar]) .wa-fab { bottom: 6rem; }
+  body:has([data-mobile-bar]) { padding-bottom: 4.5rem; }
+}
+
+@media print {
+  header, footer, .wa-fab, [data-no-print] { display: none !important; }
+}
