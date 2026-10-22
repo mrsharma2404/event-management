@@ -79,3 +79,18 @@ CREATE INDEX IF NOT EXISTS analytics_events_name_time_idx ON analytics_events (e
 CREATE INDEX IF NOT EXISTS analytics_events_session_idx ON analytics_events (session_id, occurred_at);
 CREATE INDEX IF NOT EXISTS analytics_events_anon_idx ON analytics_events (anonymous_id, occurred_at);
 CREATE INDEX IF NOT EXISTS analytics_events_package_idx ON analytics_events (package_slug, event_name) WHERE package_slug IS NOT NULL;
+
+-- One row per training run of the offline ML models (ml/), shown on /dashboard.
+CREATE TABLE IF NOT EXISTS ml_model_runs (
+  id            bigserial PRIMARY KEY,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  model         text NOT NULL,
+  target        text NOT NULL,
+  n_sessions    integer NOT NULL,
+  n_positive    integer NOT NULL,
+  n_seed        integer NOT NULL,
+  include_seed  boolean NOT NULL,
+  metrics       jsonb NOT NULL,
+  top_features  jsonb NOT NULL,
+  caveats       jsonb NOT NULL
+);

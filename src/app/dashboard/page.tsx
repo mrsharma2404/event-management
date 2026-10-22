@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { getAdminSession } from '@/lib/server/adminAuth';
-import { analyticsOverview, parseRange } from '@/lib/server/adminAnalytics';
+import { analyticsOverview, latestModelRun, parseRange, type ModelRun } from '@/lib/server/adminAnalytics';
 import { formatDate } from '@/lib/format';
 import { Logo } from '@/components/layout/Logo';
 import { cn } from '@/lib/cn';
@@ -24,8 +24,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const from = new Date(Date.parse(to) - (days - 1) * 86_400_000).toISOString().slice(0, 10);
 
   let data: DashboardData | null = null;
+  let model: ModelRun | null = null;
   try {
-    data = await analyticsOverview(parseRange(new URLSearchParams({ from, to, tz: TZ })));
+    [data, model] = await Promise.all([analyticsOverview(parseRange(new URLSearchParams({ from, to, tz: TZ }))), latestModelRun()]);
   } catch (e) {
     console.error('[dashboard]', e);
   }
@@ -63,7 +64,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </nav>
         </div>
 
-        {data ? <Dashboard data={data} /> : (
+        {data ? <Dashboard data={data} model={model} /> : (
           <div className="rounded-xl2 bg-white p-10 text-center shadow-card">
             <h2 className="mb-1 font-serif text-xl font-bold">Couldn’t load the data</h2>
             <p className="text-ink-400">Check that DATABASE_URL is set and the tables exist (npm run db:migrate). Details are in the server logs.</p>

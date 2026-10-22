@@ -261,3 +261,38 @@ export async function analyticsOverview(range: Range) {
     })),
   };
 }
+
+export interface ModelRun {
+  createdAt: string;
+  model: string;
+  nSessions: number;
+  nPositive: number;
+  nSeed: number;
+  includeSeed: boolean;
+  metrics: {
+    folds: number;
+    repeats: number;
+    prevalence: number;
+    models: Record<string, { roc_auc: { mean: number; std: number }; pr_auc: { mean: number; std: number } }>;
+    permutation_test?: { permutations: number; null_mean: number; null_p05: number; null_p95: number; p_value: number };
+  };
+  topFeatures: { feature: string; mean_abs_shap: number; direction: string }[];
+  caveats: string[];
+}
+
+/** Latest offline training run (ml/conversion_model.py), or null if none has been recorded yet. */
+export async function latestModelRun(): Promise<ModelRun | null> {
+  try {
+    const [r] = await sql`
+      SELECT created_at, model, n_sessions, n_positive, n_seed, include_seed, metrics, top_features, caveats
+      FROM ml_model_runs ORDER BY created_at DESC LIMIT 1`;
+    if (!r) return null;
+    return {
+      createdAt: new Date(r.created_at as string).toISOString(), model: r.model as string, nSessions: n(r.n_sessions),
+      nPositive: n(r.n_positive), nSeed: n(r.n_seed), includeSeed: r.include_seed as boolean,
+      metrics: r.metrics as ModelRun['metrics'], topFeatures: r.top_features as ModelRun['topFeatures'], caveats: r.caveats as string[],
+    };
+  } catch {
+    return null; // table not created yet
+  }
+}

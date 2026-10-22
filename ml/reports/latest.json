@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "trained_at": "2026-10-22 13:12 UTC",
+    "n_sessions": 136,
+    "n_positive": 11,
+    "n_seed": 135,
+    "include_seed": true,
+    "n_features": 43,
+    "caveats": [
+      "- Only 11 conversions: every metric above is very noisy (see the \u00b1). Treat this as a pipeline check, not a finding.",
+      "- Most sessions are seeded demo data, in which converting sessions were picked at random. A leak-free model *should* score near chance here; a high score would point to leakage.",
+      "- The permutation test (p = 1.00) finds no evidence of signal, so the feature ranking describes what the model latched onto, not real drivers of conversion.",
+      "- A cross-validated AUC *below* 0.5 is not a model that predicts backwards: with this few conversions, shuffled labels also land below 0.5 on average (0.48), and this run fell in the low tail of that range. It means there is nothing reliable to learn yet.",
+      "- Re-run with `--real-only` once the site has a few hundred real sessions and ~50+ conversions."
+    ]
+  },
+  "metrics": {
+    "folds": 5,
+    "repeats": 10,
+    "prevalence": 0.08088235294117647,
+    "models": {
+      "xgboost": {
+        "roc_auc": {
+          "mean": 0.27226666666666666,
+          "std": 0.1743068048649341
+        },
+        "pr_auc": {
+          "mean": 0.10004918177672924,
+          "std": 0.056023594829262086
+        }
+      },
+      "logistic_regression": {
+        "roc_auc": {
+          "mean": 0.40093333333333336,
+          "std": 0.16998305797931745
+        },
+        "pr_auc": {
+          "mean": 0.14155723002089268,
+          "std": 0.1260634167011119
+        }
+      },
+      "majority_baseline": {
+        "roc_auc": {
+          "mean": 0.5,
+          "std": 0.0
+        },
+        "pr_auc": {
+          "mean": 0.08068783068783068,
+          "std": 0.013227513227513229
+        }
+      }
+    },
+    "permutation_test": {
+      "permutations": 30,
+      "null_mean": 0.47706666666666664,
+      "null_p05": 0.33916666666666667,
+      "null_p95": 0.6201333333333332,
+      "p_value": 1.0
+    }
+  },
+  "features": [
+    {
+      "feature": "active_seconds",
+      "mean_abs_shap": 0.7055622935295105,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "avg_load_ms",
+      "mean_abs_shap": 0.6682485938072205,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "max_price_viewed",
+      "mean_abs_shap": 0.6260014176368713,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_detail_views",
+      "mean_abs_shap": 0.5153088569641113,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_testimonials",
+      "mean_abs_shap": 0.4285581111907959,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_page_views",
+      "mean_abs_shap": 0.33648043870925903,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "hour_ist",
+      "mean_abs_shap": 0.29737114906311035,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "channel_direct",
+      "mean_abs_shap": 0.26502665877342224,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "is_returning",
+      "mean_abs_shap": 0.25751304626464844,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "is_weekend",
+      "mean_abs_shap": 0.2190331667661667,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "landing_type_listing",
+      "mean_abs_shap": 0.1767808496952057,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "os_macOS",
+      "mean_abs_shap": 0.17187628149986267,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_reviews",
+      "mean_abs_shap": 0.17033341526985168,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_events",
+      "mean_abs_shap": 0.1666034460067749,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_price_views",
+      "mean_abs_shap": 0.14279936254024506,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "channel_organic_search",
+      "mean_abs_shap": 0.12462231516838074,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "os_Android",
+      "mean_abs_shap": 0.11417576670646667,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "landing_type_collection",
+      "mean_abs_shap": 0.08666087687015533,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_packages_viewed",
+      "mean_abs_shap": 0.08257926255464554,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_listing_views",
+      "mean_abs_shap": 0.06387682259082794,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "device_mobile",
+      "mean_abs_shap": 0.0528188981115818,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "os_Windows",
+      "mean_abs_shap": 0.04874977469444275,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_filters",
+      "mean_abs_shap": 0.04717028886079788,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "device_desktop",
+      "mean_abs_shap": 0.04426969960331917,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_wishlist",
+      "mean_abs_shap": 0.040804602205753326,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "n_searches",
+      "mean_abs_shap": 0.03925550356507301,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_gallery",
+      "mean_abs_shap": 0.027882376685738564,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_faq",
+      "mean_abs_shap": 0.025779498741030693,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "channel_social",
+      "mean_abs_shap": 0.023838920518755913,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "os_iOS",
+      "mean_abs_shap": 0.02327963151037693,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_tier_selects",
+      "mean_abs_shap": 0.021442575380206108,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "landing_type_package",
+      "mean_abs_shap": 0.020582957193255424,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "landing_type_home",
+      "mean_abs_shap": 0.020371638238430023,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_shares",
+      "mean_abs_shap": 0.011765919625759125,
+      "direction": "higher \u2192 less likely"
+    },
+    {
+      "feature": "n_results_clicked",
+      "mean_abs_shap": 0.0103704072535038,
+      "direction": "higher \u2192 more likely"
+    },
+    {
+      "feature": "channel_paid",
+      "mean_abs_shap": 0.0055793458595871925,
+      "direction": "higher \u2192 less likely"
+    }
+  ]
+}

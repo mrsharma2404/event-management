@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import type { analyticsOverview } from '@/lib/server/adminAnalytics';
+import type { analyticsOverview, ModelRun } from '@/lib/server/adminAnalytics';
 import { formatDate, inr, inrShort } from '@/lib/format';
 import { getCategory } from '@/lib/catalog';
 import { cn } from '@/lib/cn';
@@ -14,7 +14,7 @@ const CHANNELS: Record<string, string> = {
 const num = (n: number) => Math.round(n).toLocaleString('en-IN');
 const pct = (n: number, d = 1) => `${n.toFixed(d)}%`;
 
-export function Dashboard({ data }: { data: DashboardData }) {
+export function Dashboard({ data, model }: { data: DashboardData; model?: ModelRun | null }) {
   const { kpis } = data;
   const tiles = [
     { label: 'Booking revenue', value: inrShort(kpis.revenue.value), m: kpis.revenue },
@@ -85,6 +85,7 @@ export function Dashboard({ data }: { data: DashboardData }) {
           />
         </Card>
       </div>
+      {model && <ModelCard run={model} />}
     </div>
   );
 }
@@ -167,5 +168,72 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+const FEATURE_LABELS: Record<string, string> = {
+  active_seconds: 'Time spent browsing', avg_load_ms: 'Page load time', max_price_viewed: 'Highest package price viewed',
+  n_detail_views: 'Package pages viewed', n_packages_viewed: 'Distinct packages viewed', n_page_views: 'Page views',
+  n_events: 'Interactions', n_listing_views: 'Listing pages viewed', n_results_clicked: 'Results clicked',
+  n_searches: 'Searches', n_filters: 'Filters / sorts used', n_gallery: 'Gallery views', n_reviews: 'Review views',
+  n_faq: 'FAQs opened', n_price_views: 'Price views', n_tier_selects: 'Tier picks', n_date_selects: 'Date picks',
+  n_wishlist: 'Wishlist adds', n_shares: 'Shares', n_contact_clicks: 'WhatsApp / call clicks', n_testimonials: 'Testimonials seen',
+  is_returning: 'Returning visitor', is_weekend: 'Weekend visit', hour_ist: 'Hour of day',
+};
+const featureLabel = (f: string) =>
+  FEATURE_LABELS[f] ?? f.replace(/^(channel|device|os|landing_type)_/, (_, k: string) => `${k.replace('_type', '')}: `).replace(/_/g, ' ');
+
+/** Latest offline XGBoost run: headline verdict first, then metrics vs chance, drivers, and caveats. */
+function ModelCard({ run }: { run: ModelRun }) {
+  const xgb = run.metrics.models.xgboost;
+  const lr = run.metrics.models.logistic_regression;
+  const pt = run.metrics.permutation_test;
+  const signal = pt ? pt.p_value < 0.05 : xgb.roc_auc.mean - xgb.roc_auc.std > 0.5;
+  const metric = (label: string, value: string, sub: string) => (
+    <div className="rounded-xl bg-cream p-3.5">
+      <div className="text-xs text-ink-400">{label}</div>
+      <div className="text-xl font-bold tabular-nums">{value}</div>
+      <div className="text-xs text-ink-400">{sub}</div>
+    </div>
+  );
+  return (
+    <section className="rounded-xl2 bg-white p-5 shadow-card">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-sans text-base font-bold">Conversion model · XGBoost baseline</h2>
+          <p className="text-xs text-ink-400">
+            Predicts whether a session ends in a booking or enquiry from browsing behaviour · trained {formatDate(run.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })} on {num(run.nSessions)} sessions
+            ({num(run.nPositive)} converted{run.includeSeed && run.nSeed ? `, ${num(run.nSeed)} demo` : ''})
+          </p>
+        </div>
+        <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', signal ? 'bg-success/10 text-success' : 'bg-cream-100 text-ink-600')}>
+          {signal ? '✓ Predictive signal found' : '○ No reliable signal yet'}
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {metric('ROC-AUC (XGBoost)', `${xgb.roc_auc.mean.toFixed(2)} ± ${xgb.roc_auc.std.toFixed(2)}`, 'chance = 0.50')}
+        {metric('PR-AUC (XGBoost)', xgb.pr_auc.mean.toFixed(2), `chance = ${run.metrics.prevalence.toFixed(2)}`)}
+        {metric('ROC-AUC (logistic reg.)', lr.roc_auc.mean.toFixed(2), 'simpler baseline')}
+        {pt ? metric('Permutation test', `p = ${pt.p_value.toFixed(2)}`, `shuffled labels: ${pt.null_mean.toFixed(2)}`) : metric('Folds', `${run.metrics.folds} × ${run.metrics.repeats}`, 'stratified CV')}
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">What the model leans on</h3>
+          <Bars
+            rows={run.topFeatures.slice(0, 6).map(f => ({ label: `${featureLabel(f.feature)} (${f.direction.includes('more') ? '↑' : '↓'})`, value: f.mean_abs_shap }))}
+            display={v => v.toFixed(2)}
+          />
+          <p className="mt-2 text-xs text-ink-400">Mean |SHAP| · ↑ higher values raise the predicted chance, ↓ lower it.</p>
+        </div>
+        <div>
+          <h3 className="mb-2 text-sm font-semibold">How to read this</h3>
+          <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-600">
+            {run.caveats.map(c => <li key={c}>{c.replace(/^- /, '').replace(/\*/g, '').replace(/`/g, '')}</li>)}
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }
