@@ -181,7 +181,8 @@ function enqueue(name: EventName, props: EventProps, s: SessionInfo, at = new Da
 
 /** Record an event. Safe to call during SSR (no-op). */
 export function track(name: EventName, props: EventProps = {}) {
-  if (!isBrowser) return;
+  // Admin pages would otherwise show up in the analytics they report on.
+  if (!isBrowser || /^\/(dashboard|admin-login)/.test(location.pathname)) return;
   try {
     enqueue(name, props, currentSession());
   } catch (e) {

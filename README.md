@@ -188,3 +188,24 @@ SELECT jsonb_array_elements_text(properties->'fields') AS field, count(*)
 FROM analytics_events WHERE event_name = 'booking_form_validation_failed'
 GROUP BY 1 ORDER BY 2 DESC;
 ```
+
+## Admin dashboard
+
+`/dashboard` shows the main numbers for the last 7, 30 or 90 days, read straight from Neon on the server:
+
+- KPIs compared with the previous period
+- sessions per day
+- booking funnel
+- traffic sources
+- top packages
+- latest bookings and enquiries
+
+It's hidden behind `/admin-login`. The default login is **admin / admin123** (set in `src/lib/server/adminAuth.ts`). To change it without touching code, set env vars:
+
+```
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<strong password>
+ADMIN_SESSION_SECRET=<optional; defaults to the password>
+```
+
+Signing in sets a signed, httpOnly cookie that lasts 7 days. Visiting `/dashboard` without it redirects to the login page. Both pages are `noindex` and excluded in `robots.txt`.

@@ -8,6 +8,7 @@ import { EnquiryModal } from '@/components/enquiry/EnquiryModal';
 import { AuthModal } from '@/components/enquiry/AuthModal';
 import { Toaster } from '@/components/ui/Toaster';
 import { AnalyticsProvider } from '@/components/analytics/AnalyticsProvider';
+import { SiteChrome } from '@/components/layout/SiteChrome';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const serif = Playfair_Display({ subsets: ['latin'], variable: '--font-serif', style: ['normal', 'italic'], weight: ['600', '700'], display: 'swap' });
@@ -26,12 +27,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <StoreProvider>
-          <AnalyticsProvider />
-          <Header />
+          <SiteChrome><AnalyticsProvider /></SiteChrome>
+          <SiteChrome><Header /></SiteChrome>
           <main id="main" className="min-h-[60vh]">{children}</main>
-          <CtaBand />
-          <Footer />
-          <WhatsAppFab />
+          <SiteChrome>
+            <CtaBand />
+            <Footer />
+            <WhatsAppFab />
+          </SiteChrome>
           <EnquiryModal />
           <AuthModal />
           <Toaster />
